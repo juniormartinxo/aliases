@@ -1,2 +1,2 @@
 # Enemia
-alias ena='cd ~/apps/jm/enemia/enemia-api && clear'
+alias ena='cd ~/apps/jm/enemia/api && clear'
