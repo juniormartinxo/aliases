@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Verifica se o número correto de argumentos foi fornecido
+if [ "$#" -ne 2 ]; then
+    echo "Uso: alias-remove <nome-do-alias> <arquivo>"
+    exit 1
+fi
+
+# Define as variáveis
+alias_name="$1"       # Nome do alias (primeiro argumento)
+alias_file="$2"       # Nome do arquivo (segundo argumento)
+
+# Define o caminho completo do arquivo
+file_path="$HOME/.aliases/src/${alias_file}.alias"
+
+# Verifica se o arquivo existe
+if [ ! -f "$file_path" ]; then
+    echo "O arquivo '$alias_file.alias' não existe."
+    exit 1
+fi
+
+# Verifica se o alias existe no arquivo
+if ! grep -q "^alias $alias_name=" "$file_path"; then
+    echo "O alias '$alias_name' não existe no arquivo '$alias_file.alias'."
+    exit 0
+fi
+
+# Remove o alias e o comentário acima dele
+sed -i "/^# Alias adicionado em .*$(date '+%Y')/,/^alias $alias_name=/d" "$file_path"
+echo "Alias '$alias_name' e seu comentário foram removidos do arquivo '$alias_file.alias'."
+
+# Recarrega o arquivo de aliases para aplicar as mudanças imediatamente
+if [ -f "$file_path" ]; then
+    source "$file_path"
+    echo "Aliases recarregados."
+fi
