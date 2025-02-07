@@ -1,21 +1,48 @@
-### 1. Torne o Script Executável
-Após salvar o arquivo, torne-o executável com o seguinte comando:
+### Setup
+
+Clone o repositório no diretório `home`
 
 ```bash
-chmod +x ~/.aliases/alias-create
+git clone git@github.com:juniormartinxo/aliases.git
 ```
 
-### 2. Adicione o Caminho ao $PATH
+Insira o código abaixo no arquivo `.zshrc` ou `.bashrc`
+
+```bash
+# Carrega todos os arquivos de aliases com extensão .alias da pasta ~/.aliases
+if [ -d ~/.aliases ]; then
+    for alias_file in ~/aliases/*.alias; do
+        if [ -f "$alias_file" ]; then
+            source "$alias_file"
+        fi
+    done
+fi
+```
+
+### Torne o Script Executável
+Dê as permissões para os arquivos de comando:
+
+```bash
+chmod +x ~/aliases/alias-create && chmod +x ~/aliases/alias-remove
+```
+
+### 2. Adicione a pasta àliases` ao `$PATH`
 Para poder executar o comando alias-create de qualquer lugar, adicione o diretório ~/.aliases ao seu $PATH. Edite o arquivo .zshrc e adicione a seguinte linha:
 
 ```bash
-export PATH="$HOME/.aliases:$PATH"
+export PATH="$HOME/aliases:$PATH"
 ```
 
-Depois, recarregue o .zshrc:
+Depois, recarregue o `.zshrc` ou `.bashrc`:
 
 ```bash
 source ~/.zshrc
+```
+
+ou
+
+```bash
+source ~/.bashrc
 ```
 
 Agora, o comando alias-create estará disponível globalmente.
