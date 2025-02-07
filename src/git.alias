@@ -1,0 +1,29 @@
+# Git
+alias g='git'
+alias gs='git status'
+alias ga='git add'
+alias gk='git checkout'
+alias gb='git branch'
+alias gall='git add .'
+alias gjunior='git config --local user.name "Junior Martins" && git config --local user.email "amjr.box@gmail.com"'
+alias gafa='git config --local user.name "AFA Dev" && git config --local user.email "afadev.box@gmail.com"'
+alias gconfig='git config --list'
+alias gconfil='git config --list --local'
+alias gcy="git diff --staged | cody chat --stdin -m 'Utilizando o padrão de Conventional Commits e respeitando o limite de 100 caracteres por linha, escreva uma mensagem de commit para este diff em português do Brasil. A mensagem deve ser o mais completa e detalhada possível.'"
+alias gcom='node /home/junior/apps/commits/commit.js'
+
+# Git - Commit
+alias gcs='git commit'
+alias gcd='git commit --date='
+alias gcm='git commit -m'
+alias gcs='git commit -S'
+alias gca='git commit --amend'
+alias gcsd='git commit -S --date='
+alias gcsm='git commit -S -m'
+
+# Git - Checkout
+alias gco='git checkout'
+alias gcp='git cherry-pick'
+alias gpl='git pull'
+alias gps='git push'
+alias glog='git log --oneline --decorate --graph --all'
