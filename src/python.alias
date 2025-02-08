@@ -1,7 +1,0 @@
-# Python
-alias py='python3'
-alias python='python3'
-alias pyvenv='function _pyvenv(){ py -m venv '$1'; };_pyvenv'
-alias pyreq='py -m pip freeze > requirements.txt'
-alias pyreqi='py -m pip install -r requirements.txt'
-alias piv='source venv/bin/activate'

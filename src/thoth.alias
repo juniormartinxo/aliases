@@ -1,4 +1,0 @@
-# Thoth 53
-alias toti='cd ~/apps/pmmg/thoth/api && clear'
-alias totd='cd ~/apps/pmmg/thoth/database && clear'
-alias totf='cd ~/apps/pmmg/thoth/front && clear'

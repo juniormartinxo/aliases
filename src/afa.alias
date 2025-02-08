@@ -1,8 +1,0 @@
-# AFA
-alias afai='cd ~/apps/afa/api && clear'
-alias afac='cd ~/apps/afa/cred && clear'
-alias afad='cd ~/apps/afa/database && clear'
-alias afaf='cd ~/apps/afa/front && clear'
-alias afav='cd ~/apps/afa/view && clear'
-alias afar='cd ~/apps/afa/redis && clear'
-alias afae='cd ~/apps/afa/elk && clear'

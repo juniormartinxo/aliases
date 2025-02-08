@@ -1,4 +1,0 @@
-# Horus
-alias horusi='clear && cd ~/apps/pmmg/horus/api'
-alias horusd='clear && cd ~/apps/pmmg/horus/postgres'
-alias horusf='clear && cd ~/apps/pmmg/horus/front'
