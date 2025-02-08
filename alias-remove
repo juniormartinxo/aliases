@@ -11,7 +11,7 @@ alias_name="$1"       # Nome do alias (primeiro argumento)
 alias_file="$2"       # Nome do arquivo (segundo argumento)
 
 # Define o caminho completo do arquivo
-file_path="$HOME/.aliases/src/${alias_file}.alias"
+file_path="$HOME/aliases/src/${alias_file}.alias"
 
 # Verifica se o arquivo existe
 if [ ! -f "$file_path" ]; then
