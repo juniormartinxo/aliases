@@ -5,18 +5,45 @@ Uma ferramenta simples e eficiente para gerenciar seus aliases no Zsh ou Bash. C
 
 ## **Setup** 🔧
 
-### 1. Clone o Repositório 📥
+### Opção 1: Setup Automático (Recomendado) ⚡
+
+1. **Clone o Repositório** 📥
+   ```bash
+   git clone git@github.com:juniormartinxo/aliases.git
+   ```
+
+2. **Execute o Script de Setup** 🚀
+   ```bash
+   cd aliases
+   ./setup.sh
+   ```
+
+O script `setup.sh` automaticamente:
+- ✅ Detecta seu shell (Zsh ou Bash)
+- ✅ Configura o carregamento automático de aliases
+- ✅ Torna os scripts executáveis
+- ✅ Adiciona o diretório ao `$PATH`
+- ✅ Cria link simbólico em `~/aliases`
+- ✅ Recarrega a configuração do shell
+
+---
+
+### Opção 2: Setup Manual 🛠️
+
+Se preferir fazer a configuração manualmente, siga os passos abaixo:
+
+#### 1. Clone o Repositório 📥
 Clone este repositório para o diretório `home`:
 
 ```bash
 git clone git@github.com:juniormartinxo/aliases.git
 ```
 
-> **Nota**: O diretório será criado como `aliases` (oculto) no seu diretório home. 🏠
+> **Nota**: O diretório será criado como `aliases` no seu diretório atual. 🏠
 
 ---
 
-### 2. Configure o Carregamento Automático de Aliases ⚡
+#### 2. Configure o Carregamento Automático de Aliases ⚡
 Adicione o seguinte código ao seu arquivo `.zshrc` ou `.bashrc` para carregar automaticamente todos os arquivos de aliases com a extensão `.alias`:
 
 ```bash
@@ -34,7 +61,7 @@ fi
 
 ---
 
-### 3. Torne os Scripts Executáveis 🛠️
+#### 3. Torne os Scripts Executáveis 🛠️
 Dê permissão de execução aos scripts `alias-create` e `alias-remove`:
 
 ```bash
@@ -43,7 +70,7 @@ chmod +x ~/aliases/alias-create ~/aliases/alias-remove
 
 ---
 
-### 4. Adicione o Diretório ao `$PATH` 🌐
+#### 4. Adicione o Diretório ao `$PATH` 🌐
 Para usar os comandos `alias-create` e `alias-remove` globalmente, adicione o diretório `~/aliases` ao seu `$PATH`. Insira a seguinte linha no seu `.zshrc` ou `.bashrc`:
 
 ```bash
