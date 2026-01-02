@@ -1,0 +1,28 @@
+#!/bin/bash
+# bin/alias-disable
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+name="$1"
+
+if [[ -z "$name" ]]; then
+    echo "Usage: alias-disable <filename-without-extension>"
+    echo "Example: alias-disable 10-git"
+    exit 1
+fi
+
+# Look for .alias file
+target="$ALIASES_DIR/$name.alias"
+if [[ ! -f "$target" ]]; then
+    if [[ -f "$ALIASES_DIR/$name" ]]; then
+         target="$ALIASES_DIR/$name"
+    else
+        print_error "File $name.alias not found in $ALIASES_DIR"
+        exit 1
+    fi
+fi
+
+mv "$target" "$target.disabled"
+print_success "Disabled $name (renamed to $(basename "$target").disabled)"
+print_info "Run 'alias-reload' to apply changes."
