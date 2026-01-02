@@ -1,0 +1,51 @@
+#!/bin/bash
+# bin/alias-list
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+aliases_d="${ALIASES_DIR}"
+
+if [[ ! -d "$aliases_d" ]]; then
+    print_error "Aliases directory not found at $aliases_d"
+    exit 1
+fi
+
+print_header() {
+    printf "${BLUE}%-30s %-20s %s${NC}\n" "ALIAS" "SOURCE FILE" "COMMAND"
+    printf "%s\n" "----------------------------------------------------------------"
+}
+
+list_aliases() {
+    local file_pattern="$aliases_d/*.alias"
+    
+    # Iterate over files
+    for file in $file_pattern; do
+        [[ -e "$file" ]] || continue
+        filename=$(basename "$file")
+        
+        while IFS= read -r line; do
+            # Simple parsing for alias name='command' or alias name="command"
+            if [[ "$line" =~ ^alias\ +([^=]+)=[\"\']?(.+)[\"\']?$ ]]; then
+                name="${BASH_REMATCH[1]}"
+                cmd="${BASH_REMATCH[2]}"
+                # Clean up trailing quotes if regex didn't catch specific format accurately
+                # A more robust parser would be better but this covers 90%
+                cmd="${cmd%\'}"
+                cmd="${cmd%\"}"
+                
+                printf "%-30s ${YELLOW}%-20s${NC} %s\n" "$name" "$filename" "$cmd"
+            fi
+        done < "$file"
+    done
+}
+
+ARG="$1"
+if [[ "$ARG" == "--help" ]] || [[ "$ARG" == "-h" ]]; then
+    echo "Usage: alias-list"
+    echo "Lists all defined aliases and their source files."
+    exit 0
+fi
+
+print_header
+list_aliases
