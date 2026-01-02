@@ -1,0 +1,31 @@
+#!/bin/bash
+# bin/alias-enable
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+name="$1"
+
+if [[ -z "$name" ]]; then
+    echo "Usage: alias-enable <filename-without-extension>"
+    echo "Example: alias-enable 10-git"
+    exit 1
+fi
+
+# Look for .alias.disabled file
+target="$ALIASES_DIR/$name.alias.disabled"
+if [[ ! -f "$target" ]]; then
+    # Try just name.disabled
+    if [[ -f "$ALIASES_DIR/$name.disabled" ]]; then
+        target="$ALIASES_DIR/$name.disabled"
+    else
+        print_error "File $name.alias.disabled not found."
+        exit 1
+    fi
+fi
+
+# Remove .disabled suffix
+new_name="${target%.disabled}"
+mv "$target" "$new_name"
+print_success "Enabled $name (renamed to $(basename "$new_name"))"
+print_info "Run 'alias-reload' to apply changes."
