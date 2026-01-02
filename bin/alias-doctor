@@ -1,0 +1,65 @@
+#!/bin/bash
+# bin/alias-doctor
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+print_header() {
+    echo -e "${BLUE}🚑 Aliases Manager Doctor${NC}"
+    echo "=============================================="
+}
+
+check_result=0
+
+check_step() {
+    local msg="$1"
+    local callback="$2"
+    
+    printf "%-50s" "$msg"
+    if eval "$callback"; then
+        print_success "OK"
+    else
+        print_error "FAIL"
+        check_result=1
+    fi
+}
+
+test_dir_structure() {
+    [[ -d "$REPO_ROOT/bin" ]] && [[ -d "$REPO_ROOT/lib" ]] && [[ -d "$REPO_ROOT/share" ]]
+}
+
+test_config_dir() {
+    [[ -d "$ALIASES_DIR" ]]
+}
+
+test_shell_integration() {
+    local shell_config
+    shell_config="$(detect_shell_config)" || return 1
+    grep -q "share/init.sh" "$shell_config"
+}
+
+test_path_integration() {
+    [[ ":$PATH:" == *":$REPO_ROOT/bin:"* ]]
+}
+
+main() {
+    print_header
+
+    check_step "Project Structure (bin/lib/share)" test_dir_structure
+    check_step "Config Directory ($ALIASES_DIR)" test_config_dir
+    check_step "Shell Integration (source in RC)" test_shell_integration
+    
+    # Path might be set by RC, so if we are running this, it might be in path or not (if running via absolute path)
+    # But init.sh exports it.
+    check_step "PATH Configuration (repo/bin in PATH)" test_path_integration
+
+    echo "=============================================="
+    if [[ $check_result -eq 0 ]]; then
+        print_success "Everything looks healthy! ✨"
+    else
+        print_error "Some checks failed. Please run setup.sh again."
+        exit 1
+    fi
+}
+
+main
