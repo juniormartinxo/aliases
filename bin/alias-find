@@ -1,0 +1,25 @@
+#!/bin/bash
+# bin/alias-find
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+query="$1"
+
+if [[ -z "$query" ]] || [[ "$query" == "--help" ]] || [[ "$query" == "-h" ]]; then
+    echo "Usage: alias-find <search-term>"
+    echo "Searches for aliases matching the term in name or command."
+    exit 0
+fi
+
+if [[ ! -d "$ALIASES_DIR" ]]; then
+    print_error "Aliases directory not found."
+    exit 1
+fi
+
+echo "Searching for '$query' in $ALIASES_DIR..."
+# grep recursively, standard output logic
+grep -r --color=always "$query" "$ALIASES_DIR"/*.alias | while IFS=: read -r file line; do
+    filename=$(basename "$file")
+    echo -e "${YELLOW}$filename${NC}: $line"
+done
