@@ -1,0 +1,53 @@
+#!/bin/bash
+# bin/alias-create
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+alias_name="$1"
+alias_cmd="$2"
+alias_file="$3"
+
+if [[ -z "$alias_name" ]] || [[ -z "$alias_cmd" ]]; then
+    echo "Usage: alias-create <name> <command> [filename]"
+    echo "Example: alias-create gs 'git status' git"
+    exit 1
+fi
+
+# Default file if not provided
+if [[ -z "$alias_file" ]]; then
+    alias_file="local"
+    # Ensure local.alias exists
+fi
+
+# Ensure extension
+if [[ "$alias_file" != *.alias ]]; then
+    alias_file="${alias_file}.alias"
+fi
+
+target_path="$ALIASES_DIR/$alias_file"
+
+# Check if alias already exists in this file
+if [[ -f "$target_path" ]]; then
+    if grep -q "alias $alias_name=" "$target_path"; then
+        print_error "Alias '$alias_name' already exists in $alias_file"
+        exit 1
+    fi
+fi
+
+# Escape the command for safe single-quoted string
+# Replace ' with '\''
+escaped_cmd="${alias_cmd//\'/\'\\\'\'}"
+
+# Append to file
+ensure_dir "$ALIASES_DIR"
+
+# Add header if new file (and not local.alias which might be empty)
+if [[ ! -f "$target_path" ]]; then
+    echo "# $alias_file" > "$target_path"
+fi
+
+echo "alias $alias_name='$escaped_cmd'" >> "$target_path"
+
+print_success "Alias '$alias_name' added to $target_path"
+print_info "Run 'alias-reload' to apply changes."
