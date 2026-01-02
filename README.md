@@ -1,185 +1,71 @@
-# **Aliases Manager** 🚀
-Uma ferramenta simples e eficiente para gerenciar seus aliases no Zsh ou Bash. Com esta solução, você pode criar, remover e organizar aliases de forma dinâmica e automatizada. 💻✨
+# Aliases Manager
 
----
+A robust, shell-agnostic CLI tool to manage your shell aliases, following XDG standards.
 
-## **Setup** 🔧
+## Features
 
-### Opção 1: Setup Automático (Recomendado) ⚡
+- **Standardized Storage**: Stores aliases in `~/.config/aliases/aliases.d/`.
+- **Modular**: Organize aliases into separate files (e.g., `10-git.alias`, `20-docker.alias`).
+- **Idempotent Setup**: Safe to run `setup.sh` multiple times.
+- **Diagnostics**: Built-in `alias-doctor` command.
+- **Searchable**: Find aliases easily with `alias-find`.
 
-1. **Clone o Repositório** 📥
-   ```bash
-   git clone git@github.com:juniormartinxo/aliases.git
-   ```
-
-2. **Execute o Script de Setup** 🚀
-   ```bash
-   cd aliases
-   ./setup.sh
-   ```
-
-O script `setup.sh` automaticamente:
-- ✅ Detecta seu shell (Zsh ou Bash)
-- ✅ Configura o carregamento automático de aliases
-- ✅ Torna os scripts executáveis
-- ✅ Adiciona o diretório ao `$PATH`
-- ✅ Cria link simbólico em `~/aliases`
-- ✅ Recarrega a configuração do shell
-
----
-
-### Opção 2: Setup Manual 🛠️
-
-Se preferir fazer a configuração manualmente, siga os passos abaixo:
-
-#### 1. Clone o Repositório 📥
-Clone este repositório para o diretório `home`:
+## Installation
 
 ```bash
-git clone git@github.com:juniormartinxo/aliases.git
+git clone https://github.com/yourusername/aliases.git
+cd aliases
+./setup.sh
 ```
 
-> **Nota**: O diretório será criado como `aliases` no seu diretório atual. 🏠
+Restart your terminal or run `source ~/.zshrc` (or `~/.bashrc`) to apply.
 
----
+## Usage
 
-#### 2. Configure o Carregamento Automático de Aliases ⚡
-Adicione o seguinte código ao seu arquivo `.zshrc` ou `.bashrc` para carregar automaticamente todos os arquivos de aliases com a extensão `.alias`:
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `alias-create <name> <cmd> [file]` | Create a new alias. Defaults to `local.alias`. |
+| `alias-remove <name>` | Remove an alias. |
+| `alias-list` | List all managed aliases. |
+| `alias-find <query>` | Search for aliases. |
+| `alias-edit <name>` | Edit the file containing the alias (requires `$EDITOR`). |
+| `alias-reload` | Reload aliases immediately. |
+| `alias-enable <name>` | Enable a disabled alias file. |
+| `alias-disable <name>` | Disable an alias file. |
+| `alias-doctor` | Verify installation health. |
+
+### Examples
 
 ```bash
-# Carrega todos os arquivos de aliases com extensão .alias da pasta ~/aliases
-if [ -d ~/aliases ]; then
-    for alias_file in ~/aliases/*.alias; do
-        if [ -f "$alias_file" ]; then
-            source "$alias_file"
-        fi
-    done
-fi
+# Create a new alias in the 'git' category
+alias-create gs 'git status' git
+
+# List all aliases
+alias-list
+
+# Search for docker related aliases
+alias-find docker
 ```
 
-> **Dica**: Certifique-se de que o diretório `~/aliases` existe antes de adicionar este código. 📂
+## Structure
 
----
-
-#### 3. Torne os Scripts Executáveis 🛠️
-Dê permissão de execução aos scripts `alias-create` e `alias-remove`:
-
-```bash
-chmod +x ~/aliases/alias-create ~/aliases/alias-remove
+```
+~/.config/aliases/
+  aliases.d/
+    00-core.alias    # Core aliases
+    local.alias      # Local/Custom aliases
+    ...
 ```
 
----
+Files are loaded in alphabetical order. `local.alias` is always loaded last.
 
-#### 4. Adicione o Diretório ao `$PATH` 🌐
-Para usar os comandos `alias-create` e `alias-remove` globalmente, adicione o diretório `~/aliases` ao seu `$PATH`. Insira a seguinte linha no seu `.zshrc` ou `.bashrc`:
+## Development
 
-```bash
-export PATH="$HOME/aliases:$PATH"
-```
+- **Tests**: Run `bats tests/`
+- **Linting**: Run `shellcheck bin/*`
 
-Depois, recarregue o arquivo de configuração:
+## Uninstallation
 
-```bash
-source ~/.zshrc
-```
-ou
-```bash
-source ~/.bashrc
-```
-
-> **Alternativa Global**: Se preferir, mova os scripts para `/usr/local/bin`: 📦
->
-> ```bash
-> sudo mv ~/aliases/alias-create /usr/local/bin/
-> sudo mv ~/aliases/alias-remove /usr/local/bin/
-> ```
-
----
-
-## **Exemplo de Uso** 🎯
-
-### Criar um Novo Alias ✨
-Suponha que você deseja criar um alias chamado `test` com o comando `cd ~/teste && clear` no arquivo `teste.alias`. Execute o seguinte comando:
-
-```bash
-alias-create test 'cd ~/teste && clear' teste
-```
-
-#### Resultado:
-- Se o arquivo `teste.alias` não existir, ele será criado. 🆕
-- O alias será adicionado ao arquivo:
-  ```bash
-  # Alias adicionado em Thu Oct 19 14:00:00 UTC 2023
-  alias test='cd ~/teste && clear'
-  ```
-- O arquivo será recarregado automaticamente, e o alias estará disponível imediatamente. 🔄
-
-Se o alias já existir no arquivo, o script avisará:
-```text
-O alias 'test' já existe no arquivo 'teste.alias'. ❗
-```
-
----
-
-### Remover um Alias 🗑️
-Para remover o alias `test` do arquivo `teste.alias`, execute:
-
-```bash
-alias-remove test teste
-```
-
-#### Resultado:
-- O alias e o comentário associado serão removidos do arquivo. ✂️
-- O arquivo será recarregado automaticamente. 🔄
-
----
-
-## **Dicas Adicionais** 💡
-
-### 1. Backup Automático 📋
-Antes de modificar um arquivo, você pode criar um backup automático adicionando o seguinte comando ao script:
-
-```bash
-cp "$file_path" "${file_path}.bak"
-```
-
-Isso cria uma cópia de segurança com a extensão `.bak`. 🛡️
-
----
-
-### 2. Comentários Automáticos 📝
-Os scripts adicionam automaticamente comentários com a data e hora ao criar novos aliases. Exemplo:
-
-```bash
-# Alias adicionado em Thu Oct 19 14:00:00 UTC 2023
-alias test='cd ~/teste && clear'
-```
-
-Se desejar personalizar o formato da data, modifique o comando `$(date)` no script. Por exemplo:
-
-```bash
-echo "# Alias adicionado em $(date '+%Y-%m-%d %H:%M:%S')" >> "$file_path"
-```
-
----
-
-### 3. Extensão Padrão 📁
-Mantenha a convenção de usar sempre a extensão `.alias` para arquivos de aliases. Isso garante consistência e facilita a manutenção. 🔧
-
----
-
-### 4. Organização por Categoria 🗂️
-Recomenda-se organizar os arquivos de aliases por categoria. Por exemplo:
-- `git.alias`: Aliases relacionados ao Git. 🌟
-- `docker.alias`: Aliases para Docker. 🐳
-- `system.alias`: Aliases para comandos do sistema. 💻
-
----
-
-## **Contribuições** 🤝
-Contribuições são bem-vindas! Se você tiver sugestões ou melhorias, sinta-se à vontade para abrir uma issue ou enviar um pull request. 🚀
-
----
-
-## **Licença** 📜
-Este projeto está licenciado sob a [MIT License](LICENSE). 🌐
+Run `./uninstall.sh` to remove the shell integration. You will be prompted if you want to remove the configuration directory.
