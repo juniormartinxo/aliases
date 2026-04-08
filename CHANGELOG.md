@@ -7,6 +7,8 @@
 - PowerShell-focused installation and usage guidance in the English and Portuguese READMEs.
 - PowerShell examples in `alias-create --help`, including executables with spaces in the path and `.ps1` scripts.
 - `alias-edit` support in the PowerShell runtime.
+- `uninstall.ps1` for removing the PowerShell profile integration and optional config directory.
+- `-Help` support for PowerShell commands such as `alias-reload`, `alias-remove`, `alias-edit`, `alias-list`, `alias-find`, `alias-enable`, `alias-disable`, and `alias-doctor`.
 
 ### Fixed
 
