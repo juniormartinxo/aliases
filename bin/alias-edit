@@ -1,0 +1,67 @@
+#!/bin/bash
+# bin/alias-edit
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$REPO_ROOT/lib/utils.sh"
+
+name="$1"
+
+show_help() {
+    cat <<'EOF'
+Usage: alias-edit <name-or-file>
+
+Examples:
+  alias-edit git
+  alias-edit gst
+EOF
+}
+
+if [[ "$name" == "--help" ]] || [[ "$name" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+if [[ -z "$name" ]]; then
+    show_help
+    exit 1
+fi
+
+if [[ ! -d "$ALIASES_DIR" ]]; then
+    print_error "Aliases directory not found."
+    exit 1
+fi
+
+target_file=""
+
+if [[ -f "$ALIASES_DIR/$name.alias" ]]; then
+    target_file="$ALIASES_DIR/$name.alias"
+elif [[ -f "$ALIASES_DIR/$name" ]]; then
+    target_file="$ALIASES_DIR/$name"
+else
+    matches=()
+    shopt -s nullglob
+    for file in "$ALIASES_DIR"/*.alias; do
+        if grep -qE "^[[:space:]]*alias[[:space:]]+$name[[:space:]]*=" "$file"; then
+            matches+=("$file")
+        fi
+    done
+    shopt -u nullglob
+
+    if [[ ${#matches[@]} -eq 1 ]]; then
+        target_file="${matches[0]}"
+    elif [[ ${#matches[@]} -gt 1 ]]; then
+        print_error "Alias '$name' exists in multiple files. Specify the file name."
+        printf '%s\n' "${matches[@]##*/}"
+        exit 1
+    fi
+fi
+
+if [[ -z "$target_file" ]]; then
+    print_error "Alias file or alias '$name' not found."
+    echo "Available files:"
+    ls "$ALIASES_DIR"
+    exit 1
+fi
+
+${EDITOR:-vi} "$target_file"
+print_info "Run 'alias-reload' to apply changes."
