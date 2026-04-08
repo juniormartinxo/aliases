@@ -94,6 +94,7 @@ deploy-api
 
 - Os aliases gerenciados sao funcoes do PowerShell, nao entradas `AliasInfo`.
 - Use `Get-Command <nome>` para verificar se um alias foi carregado.
+- Use `-Help` em comandos do PowerShell como `alias-create -Help`, `alias-remove -Help` e `alias-disable -Help`.
 - Use `alias-reload` apos criar, editar, habilitar ou desabilitar aliases.
 - Use `. $PROFILE` apos alterar a integracao instalada ou ao abrir uma nova sessao.
 - Para comandos cujo executavel tenha espacos no caminho, use o operador `&`: `& 'C:\Caminho Com Espacos\tool.exe'`.
@@ -137,4 +138,20 @@ Arquivos são carregados em ordem alfabética. `local.alias` é sempre carregado
 
 ## Desinstalação
 
-Execute `./uninstall.sh` para remover a integração com o shell. Você será perguntado se deseja remover o diretório de configuração.
+### Bash / Zsh
+
+Execute `./uninstall.sh` para remover a integração com o shell. Voce sera perguntado se deseja remover o diretorio de configuracao.
+
+### PowerShell
+
+```powershell
+.\uninstall.ps1
+```
+
+Isso remove o bloco `aliases-manager` do `$PROFILE` e pergunta se o diretorio de configuracao tambem deve ser removido.
+
+Para remover o diretorio de configuracao sem prompt extra:
+
+```powershell
+.\uninstall.ps1 -RemoveConfig
+```
