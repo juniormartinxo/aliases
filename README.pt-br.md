@@ -64,6 +64,9 @@ alias-list
 
 # Buscar aliases relacionados ao docker
 alias-find docker
+
+# Ver ajuda de um comando Bash/Zsh
+alias-edit --help
 ```
 
 ```powershell
@@ -118,6 +121,11 @@ alias pfle='& ''C:\Program Files\Notepad++\notepad++.exe'' ''C:\Users\you\Docume
   Defina explicitamente como `& 'C:\caminho\script.ps1'`. Se o ambiente bloquear execucao de scripts, ajuste a execution policy do PowerShell conforme os requisitos do seu sistema.
 - Voce alterou a integracao instalada e ainda ve comportamento antigo:
   Rode `.\setup.ps1` novamente e depois `. $PROFILE`.
+
+### Notas para Bash / Zsh
+
+- A maior parte dos comandos Bash / Zsh em `bin/` aceita `--help`, por exemplo `alias-create --help`, `alias-edit --help` e `alias-doctor --help`.
+- No Bash / Zsh, `alias-edit` fica disponivel tanto pela integracao do shell quanto pelo comando standalone `bin/alias-edit`.
 
 ## Estrutura
 
