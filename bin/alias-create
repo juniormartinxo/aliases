@@ -8,9 +8,24 @@ alias_name="$1"
 alias_cmd="$2"
 alias_file="$3"
 
+show_help() {
+    cat <<'EOF'
+Usage: alias-create <name> <command> [filename]
+
+Examples:
+  alias-create gs 'git status' git
+  alias-create pfle '& '\''C:\Program Files\Notepad++\notepad++.exe'\'' '\''$PROFILE'\''' system
+  alias-create syncdocs '& '\''C:\tools\sync-docs.ps1'\''' scripts
+EOF
+}
+
+if [[ "$alias_name" == "--help" ]] || [[ "$alias_name" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
 if [[ -z "$alias_name" ]] || [[ -z "$alias_cmd" ]]; then
-    echo "Usage: alias-create <name> <command> [filename]"
-    echo "Example: alias-create gs 'git status' git"
+    show_help
     exit 1
 fi
 
