@@ -9,6 +9,14 @@ print_header() {
     echo "=============================================="
 }
 
+show_help() {
+    cat <<'EOF'
+Usage: alias-doctor
+
+Checks project structure, aliases config directory, shell integration, and PATH setup.
+EOF
+}
+
 check_result=0
 
 check_step() {
@@ -61,5 +69,10 @@ main() {
         exit 1
     fi
 }
+
+if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    show_help
+    exit 0
+fi
 
 main
