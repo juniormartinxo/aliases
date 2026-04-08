@@ -9,6 +9,8 @@
 - `alias-edit` support in the PowerShell runtime.
 - `uninstall.ps1` for removing the PowerShell profile integration and optional config directory.
 - `-Help` support for PowerShell commands such as `alias-reload`, `alias-remove`, `alias-edit`, `alias-list`, `alias-find`, `alias-enable`, `alias-disable`, and `alias-doctor`.
+- `bin/alias-edit` for Bash / Zsh environments without relying only on shell functions.
+- Standardized `--help` output for Bash scripts such as `alias-remove`, `alias-enable`, `alias-disable`, and `alias-doctor`.
 
 ### Fixed
 
