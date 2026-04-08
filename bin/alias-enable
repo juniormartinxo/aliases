@@ -6,9 +6,23 @@ source "$REPO_ROOT/lib/utils.sh"
 
 name="$1"
 
+show_help() {
+    cat <<'EOF'
+Usage: alias-enable <filename-without-extension>
+
+Examples:
+  alias-enable git
+  alias-enable 10-git
+EOF
+}
+
+if [[ "$name" == "--help" ]] || [[ "$name" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
 if [[ -z "$name" ]]; then
-    echo "Usage: alias-enable <filename-without-extension>"
-    echo "Example: alias-enable 10-git"
+    show_help
     exit 1
 fi
 
