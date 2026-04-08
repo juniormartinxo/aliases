@@ -10,6 +10,12 @@ $global:ALIASES_DIR = Join-Path $global:ALIASES_ROOT 'aliases.d'
 $global:ALIASES_PROJECT_ROOT = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $global:ALIASES_LOADED = [System.Collections.Generic.List[string]]::new()
 
+function global:_aliases_manager_write_help {
+    param([Parameter(Mandatory)][string]$Text)
+
+    $Text.Trim("`r", "`n") | Write-Host
+}
+
 function global:_aliases_manager_quote_argument {
     param([Parameter(Mandatory)][AllowEmptyString()][string]$Value)
 
@@ -117,6 +123,17 @@ function global:_aliases_manager_load_alias_file {
 }
 
 function global:alias-reload {
+    param([Alias('h')][switch]$Help)
+
+    if ($Help) {
+        _aliases_manager_write_help @'
+Usage: alias-reload
+
+Reloads all managed aliases into the current PowerShell session.
+'@
+        return
+    }
+
     foreach ($name in $global:ALIASES_LOADED) {
         $functionPath = "Function:\global:$name"
         if (Test-Path $functionPath) {
@@ -191,9 +208,26 @@ Examples:
 
 function global:alias-remove {
     param(
-        [Parameter(Mandatory, Position = 0)] [string]$Name,
-        [Parameter(Position = 1)] [string]$File
+        [Parameter(Position = 0)] [string]$Name,
+        [Parameter(Position = 1)] [string]$File,
+        [Alias('h')] [switch]$Help
     )
+
+    if ($Help -or [string]::IsNullOrWhiteSpace($Name)) {
+        _aliases_manager_write_help @'
+Usage: alias-remove <name> [file]
+
+Examples:
+  alias-remove gst
+  alias-remove gst git
+'@
+
+        if ($Help) {
+            return
+        }
+
+        throw 'alias-remove requires <name>.'
+    }
 
     if (-not (Test-Path $global:ALIASES_DIR)) {
         throw 'Aliases directory not found.'
@@ -227,7 +261,26 @@ function global:alias-remove {
 }
 
 function global:alias-edit {
-    param([Parameter(Mandatory, Position = 0)] [string]$Name)
+    param(
+        [Parameter(Position = 0)] [string]$Name,
+        [Alias('h')] [switch]$Help
+    )
+
+    if ($Help -or [string]::IsNullOrWhiteSpace($Name)) {
+        _aliases_manager_write_help @'
+Usage: alias-edit <name-or-file>
+
+Examples:
+  alias-edit git
+  alias-edit gst
+'@
+
+        if ($Help) {
+            return
+        }
+
+        throw 'alias-edit requires <name-or-file>.'
+    }
 
     if (-not (Test-Path $global:ALIASES_DIR)) {
         throw 'Aliases directory not found.'
@@ -264,6 +317,17 @@ function global:alias-edit {
 }
 
 function global:alias-list {
+    param([Alias('h')] [switch]$Help)
+
+    if ($Help) {
+        _aliases_manager_write_help @'
+Usage: alias-list
+
+Lists all managed aliases, their source file, and the stored command text.
+'@
+        return
+    }
+
     if (-not (Test-Path $global:ALIASES_DIR)) {
         throw 'Aliases directory not found at aliases root.'
     }
@@ -288,7 +352,26 @@ function global:alias-list {
 }
 
 function global:alias-find {
-    param([Parameter(Mandatory, Position = 0)] [string]$Query)
+    param(
+        [Parameter(Position = 0)] [string]$Query,
+        [Alias('h')] [switch]$Help
+    )
+
+    if ($Help -or [string]::IsNullOrWhiteSpace($Query)) {
+        _aliases_manager_write_help @'
+Usage: alias-find <query>
+
+Examples:
+  alias-find git
+  alias-find profile
+'@
+
+        if ($Help) {
+            return
+        }
+
+        throw 'alias-find requires <query>.'
+    }
 
     if (-not (Test-Path $global:ALIASES_DIR)) {
         throw 'Aliases directory not found.'
@@ -300,7 +383,26 @@ function global:alias-find {
 }
 
 function global:alias-enable {
-    param([Parameter(Mandatory)][string]$Name)
+    param(
+        [Parameter(Position = 0)] [string]$Name,
+        [Alias('h')] [switch]$Help
+    )
+
+    if ($Help -or [string]::IsNullOrWhiteSpace($Name)) {
+        _aliases_manager_write_help @'
+Usage: alias-enable <file>
+
+Examples:
+  alias-enable git
+  alias-enable 10-docker
+'@
+
+        if ($Help) {
+            return
+        }
+
+        throw 'alias-enable requires <file>.'
+    }
 
     $target = Join-Path $global:ALIASES_DIR "$Name.alias.disabled"
     if (-not (Test-Path $target)) {
@@ -316,7 +418,26 @@ function global:alias-enable {
 }
 
 function global:alias-disable {
-    param([Parameter(Mandatory)][string]$Name)
+    param(
+        [Parameter(Position = 0)] [string]$Name,
+        [Alias('h')] [switch]$Help
+    )
+
+    if ($Help -or [string]::IsNullOrWhiteSpace($Name)) {
+        _aliases_manager_write_help @'
+Usage: alias-disable <file>
+
+Examples:
+  alias-disable git
+  alias-disable 10-docker
+'@
+
+        if ($Help) {
+            return
+        }
+
+        throw 'alias-disable requires <file>.'
+    }
 
     $target = Join-Path $global:ALIASES_DIR "$Name.alias"
     if (-not (Test-Path $target)) {
@@ -331,6 +452,17 @@ function global:alias-disable {
 }
 
 function global:alias-doctor {
+    param([Alias('h')] [switch]$Help)
+
+    if ($Help) {
+        _aliases_manager_write_help @'
+Usage: alias-doctor
+
+Checks the PowerShell installation, profile integration, and aliases directory.
+'@
+        return
+    }
+
     Write-Host 'Aliases Manager Doctor' -ForegroundColor Cyan
     Write-Host '=============================================='
 
