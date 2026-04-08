@@ -94,6 +94,7 @@ deploy-api
 
 - Managed aliases are PowerShell functions, not `AliasInfo` entries.
 - Use `Get-Command <name>` to verify whether an alias is loaded.
+- Use `-Help` with PowerShell commands such as `alias-create -Help`, `alias-remove -Help`, or `alias-disable -Help`.
 - Use `alias-reload` after creating, editing, enabling, or disabling aliases.
 - Use `. $PROFILE` after changing the installed integration or opening a new session.
 - For commands whose executable path contains spaces, use the PowerShell call operator: `& 'C:\Path With Spaces\tool.exe'`.
@@ -137,4 +138,20 @@ Files are loaded in alphabetical order. `local.alias` is always loaded last.
 
 ## Uninstallation
 
+### Bash / Zsh
+
 Run `./uninstall.sh` to remove the shell integration. You will be prompted if you want to remove the configuration directory.
+
+### PowerShell
+
+```powershell
+.\uninstall.ps1
+```
+
+This removes the `aliases-manager` block from `$PROFILE` and asks whether the configuration directory should also be removed.
+
+To remove the configuration directory without an extra prompt:
+
+```powershell
+.\uninstall.ps1 -RemoveConfig
+```
