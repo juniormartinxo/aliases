@@ -71,36 +71,54 @@ alias-edit() {
     local name="$1"
     local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/aliases"
     local aliases_d="$config_dir/aliases.d"
+    local target_file=""
+    local matches=()
+    local file
     
+    if [[ "$name" == "--help" ]] || [[ "$name" == "-h" ]]; then
+        echo "Usage: alias-edit <name-or-file>"
+        echo "Examples:"
+        echo "  alias-edit git"
+        echo "  alias-edit gst"
+        return 0
+    fi
+
     if [[ -z "$name" ]]; then
-        echo "Usage: alias-edit <name>"
+        echo "Usage: alias-edit <name-or-file>"
+        return 1
+    fi
+
+    if [[ ! -d "$aliases_d" ]]; then
+        echo "Aliases directory not found."
         return 1
     fi
     
-    # Try to find the file
-    local target_file=""
     if [[ -f "$aliases_d/$name.alias" ]]; then
         target_file="$aliases_d/$name.alias"
     elif [[ -f "$aliases_d/$name" ]]; then
         target_file="$aliases_d/$name"
     else
-        # Search for defined alias to find which file it belongs to?
-        # That's hard without parsing.
-        # Fallback to opening the main dir or finding a file with that name
-        # Let's assume the user passes the alias name or file basename.
-        # For now simple file match.
-        
-        # Check if we can find a file that contains this alias definition?
-        # Too heavy for a shell function? Maybe.
-        # Let's just try to open "$aliases_d/$name.alias" or create it if user wants?
-        # Requirement: "abre no $EDITOR".
-        
-        # If not found, look for partial match in filenames?
-        local matches=("$aliases_d"/*"$name"*.alias)
+        if [ -n "$ZSH_VERSION" ]; then
+            setopt local_options nullglob
+            for file in "$aliases_d"/*.alias; do
+                if grep -qE "^[[:space:]]*alias[[:space:]]+$name[[:space:]]*=" "$file"; then
+                    matches+=("$file")
+                fi
+            done
+        else
+            shopt -s nullglob
+            for file in "$aliases_d"/*.alias; do
+                if grep -qE "^[[:space:]]*alias[[:space:]]+$name[[:space:]]*=" "$file"; then
+                    matches+=("$file")
+                fi
+            done
+            shopt -u nullglob
+        fi
+
         if [[ ${#matches[@]} -eq 1 ]]; then
             target_file="${matches[0]}"
         elif [[ ${#matches[@]} -gt 1 ]]; then
-            echo "Multiple files match '$name':"
+            echo "Alias '$name' exists in multiple files. Specify the file name."
             printf '%s\n' "${matches[@]##*/}"
             return 1
         fi
@@ -110,9 +128,10 @@ alias-edit() {
         ${EDITOR:-vi} "$target_file"
         alias-reload
     else
-        echo "Alias file not found for '$name'."
+        echo "Alias file or alias '$name' not found."
         echo "Available files:"
         ls "$aliases_d"
+        return 1
     fi
 }
 
