@@ -43,6 +43,27 @@ teardown() {
     [[ "$output" == *"echo bar"* ]]
 }
 
+@test "alias-list: groups aliases under their source file" {
+    alias-create gs 'git status' git
+    alias-create dcu 'docker compose up' docker
+    run alias-list
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"docker.alias"* ]]
+    [[ "$output" == *"git.alias"* ]]
+    # docker.alias block comes first and holds dcu, not gs
+    docker_block="${output%%git.alias*}"
+    [[ "$docker_block" == *"dcu"* ]]
+    [[ "$docker_block" != *"gs "* ]]
+    [[ "$output" == *"2 aliases in 2 files"* ]]
+}
+
+@test "alias-list: no color codes when output is not a terminal" {
+    alias-create foo 'echo bar' testfile
+    run alias-list
+    [ "$status" -eq 0 ]
+    [[ "$output" != *$'\033'* ]]
+}
+
 @test "alias-remove: removes alias" {
     alias-create foo 'echo bar' testfile
     run alias-remove foo

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-23
+
+### Changed
+
+- `alias-list` now groups aliases by source file, with a header per file, and lays them out in up to 3 columns depending on terminal width. Long commands are truncated with `…`, alias names are never cut, and colors are only used when writing to a terminal (respects `NO_COLOR`).
+
 ## 2026-04-08
 
 ### Added

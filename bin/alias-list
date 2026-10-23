@@ -4,6 +4,14 @@
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/lib/utils.sh"
 
+ARG="$1"
+if [[ "$ARG" == "--help" ]] || [[ "$ARG" == "-h" ]]; then
+    echo "Usage: alias-list"
+    echo "Lists all defined aliases, grouped by source file, in columns."
+    echo "Long commands are truncated to fit the terminal width."
+    exit 0
+fi
+
 aliases_d="${ALIASES_DIR}"
 
 if [[ ! -d "$aliases_d" ]]; then
@@ -11,41 +19,142 @@ if [[ ! -d "$aliases_d" ]]; then
     exit 1
 fi
 
-print_header() {
-    printf "${BLUE}%-30s %-20s %s${NC}\n" "ALIAS" "SOURCE FILE" "COMMAND"
-    printf "%s\n" "----------------------------------------------------------------"
-}
-
-list_aliases() {
-    local file_pattern="$aliases_d/*.alias"
-    
-    # Iterate over files
-    for file in $file_pattern; do
-        [[ -e "$file" ]] || continue
-        filename=$(basename "$file")
-        
-        while IFS= read -r line; do
-            # Simple parsing for alias name='command' or alias name="command"
-            if [[ "$line" =~ ^alias\ +([^=]+)=[\"\']?(.+)[\"\']?$ ]]; then
-                name="${BASH_REMATCH[1]}"
-                cmd="${BASH_REMATCH[2]}"
-                # Clean up trailing quotes if regex didn't catch specific format accurately
-                # A more robust parser would be better but this covers 90%
-                cmd="${cmd%\'}"
-                cmd="${cmd%\"}"
-                
-                printf "%-30s ${YELLOW}%-20s${NC} %s\n" "$name" "$filename" "$cmd"
-            fi
-        done < "$file"
-    done
-}
-
-ARG="$1"
-if [[ "$ARG" == "--help" ]] || [[ "$ARG" == "-h" ]]; then
-    echo "Usage: alias-list"
-    echo "Lists all defined aliases and their source files."
-    exit 0
+# Colors only when writing to a terminal (and NO_COLOR is not set)
+C_FILE="" C_NAME="" C_DIM="" C_RESET=""
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    printf -v C_FILE '%b' "$YELLOW"
+    printf -v C_NAME '%b' "$GREEN"
+    printf -v C_DIM '%b' '\033[2m'
+    printf -v C_RESET '%b' "$NC"
 fi
 
-print_header
-list_aliases
+# Unicode glyphs only on UTF-8 locales
+if [[ "${LC_ALL:-${LC_CTYPE:-$LANG}}" =~ [Uu][Tt][Ff]-?8 ]]; then
+    ELLIPSIS="…" RULE_CHAR="─"
+else
+    ELLIPSIS="..." RULE_CHAR="-"
+fi
+
+# Layout: up to 3 columns on wide terminals, 2 on regular ones, 1 on narrow ones
+width=$(tput cols 2>/dev/null)
+[[ "$width" =~ ^[0-9]+$ ]] || width=80
+INDENT="  "
+GUTTER="    "
+MIN_CMD_WIDTH=20
+if (( width >= 120 )); then
+    max_cols=3
+elif (( width >= 70 )); then
+    max_cols=2
+else
+    max_cols=1
+fi
+
+# cell_width_for <columns>: sets cell_width to the width of each cell in a line with that many columns
+cell_width_for() {
+    cell_width=$(( (width - ${#INDENT} - ${#GUTTER} * ($1 - 1)) / $1 ))
+}
+
+# fit <var> <text> <width>: stores text truncated or padded to exactly <width> chars in <var>
+fit() {
+    local text="$2" w="$3"
+    if (( ${#text} > w )); then
+        if (( w > ${#ELLIPSIS} )); then
+            text="${text:0:w-${#ELLIPSIS}}$ELLIPSIS"
+        else
+            text="${text:0:w}"
+        fi
+    fi
+    printf -v "$1" '%s%*s' "$text" $(( w - ${#text} )) ""
+}
+
+# repeat <var> <char> <count>
+repeat() {
+    local out="" n="$3"
+    while (( n-- > 0 )); do out+="$2"; done
+    printf -v "$1" '%s' "$out"
+}
+
+total_aliases=0
+total_files=0
+
+# Prints one file's aliases as a titled block; returns 1 if the file has no aliases
+print_file() {
+    local file="$1" filename line name cmd quote
+    local -a names=() cmds=()
+    filename=$(basename "$file")
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # alias name='command' / alias name="command" / alias name=command
+        if [[ "$line" =~ ^[[:space:]]*alias[[:space:]]+([^=[:space:]]+)=(.*)$ ]]; then
+            name="${BASH_REMATCH[1]}"
+            cmd="${BASH_REMATCH[2]}"
+            quote="${cmd:0:1}"
+            if [[ ( "$quote" == "'" || "$quote" == '"' ) && ${#cmd} -ge 2 && "${cmd: -1}" == "$quote" ]]; then
+                cmd="${cmd:1:${#cmd}-2}"
+            fi
+            names+=("$name")
+            cmds+=("$cmd")
+        fi
+    done < "$file"
+
+    local count=${#names[@]}
+    (( count > 0 )) || return 1
+
+    # Header: "docker.alias ──────────── 6", separated from the previous block
+    (( total_files > 0 )) && echo
+    local rule label="$count"
+    repeat rule "$RULE_CHAR" $(( width - ${#filename} - ${#label} - 2 ))
+    printf '%s\n' "${C_FILE}${filename}${C_RESET} ${C_DIM}${rule} ${label}${C_RESET}"
+
+    # Name column is as wide as the longest name in this file
+    local namew=0
+    for name in "${names[@]}"; do
+        (( ${#name} > namew )) && namew=${#name}
+    done
+
+    # Columns per block: never more than there are aliases, and names are not cut,
+    # so drop a column while the longest name leaves no room for a usable command
+    local ncols=$(( count < max_cols ? count : max_cols ))
+    local rows cell_width
+    while :; do
+        rows=$(( (count + ncols - 1) / ncols ))
+        ncols=$(( (count + rows - 1) / rows ))
+        cell_width_for "$ncols"
+        (( ncols == 1 || namew + 2 + MIN_CMD_WIDTH <= cell_width )) && break
+        ncols=$(( ncols - 1 ))
+    done
+    # Only a very narrow terminal can still leave no room; then names share the cell
+    (( namew + 2 + MIN_CMD_WIDTH > cell_width )) && namew=$(( cell_width / 2 ))
+    local cmdw=$(( cell_width - namew - 2 ))
+    (( cmdw < 1 )) && cmdw=1
+
+    # Fill column by column, like ls
+    local r c i out fitted_name fitted_cmd
+    for (( r = 0; r < rows; r++ )); do
+        out="$INDENT"
+        for (( c = 0; c < ncols; c++ )); do
+            i=$(( c * rows + r ))
+            (( i < count )) || break
+            (( c > 0 )) && out+="$GUTTER"
+            fit fitted_name "${names[i]}" "$namew"
+            fit fitted_cmd "${cmds[i]}" "$cmdw"
+            out+="${C_NAME}${fitted_name}${C_RESET}  ${fitted_cmd}"
+        done
+        printf '%s\n' "${out%"${out##*[! ]}"}"
+    done
+
+    total_aliases=$(( total_aliases + count ))
+    total_files=$(( total_files + 1 ))
+}
+
+for file in "$aliases_d"/*.alias; do
+    [[ -e "$file" ]] || continue
+    print_file "$file"
+done
+
+if (( total_files == 0 )); then
+    print_info "No aliases found in $aliases_d"
+else
+    echo
+    printf '%s\n' "${C_DIM}${total_aliases} aliases in ${total_files} files${C_RESET}"
+fi

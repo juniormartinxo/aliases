@@ -52,7 +52,8 @@ These scripts are added to PATH and can be executed as commands.
 ### `alias-list`
 **Usage**: `alias-list`
 - Lists all configured aliases.
-- Shows: Alias name, source file, and command executed.
+- Groups aliases by source file, showing name and command in 2-3 columns (depending on terminal width).
+- Long commands are truncated with `…`; colors are only used when writing to a terminal (respects `NO_COLOR`).
 
 ### `alias-find`
 **Usage**: `alias-find <query>`

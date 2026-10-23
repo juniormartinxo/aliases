@@ -52,7 +52,8 @@ Estes scripts são adicionados ao PATH e podem ser executados como comandos.
 ### `alias-list`
 **Uso**: `alias-list`
 - Lista todos os aliases configurados.
-- Mostra: Nome do alias, arquivo de origem e o comando executado.
+- Agrupa os aliases por arquivo de origem, mostrando nome e comando em 2 a 3 colunas (conforme a largura do terminal).
+- Comandos longos são truncados com `…`; cores só são usadas quando a saída é um terminal (respeita `NO_COLOR`).
 
 ### `alias-find`
 **Uso**: `alias-find <termo>`
