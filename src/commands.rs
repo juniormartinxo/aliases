@@ -41,26 +41,46 @@ fn plain(arg: &str) -> Result<&str> {
     Ok(arg)
 }
 
-pub fn create(name: &str, command: &str, file: Option<&str>) -> Result {
+/// The file `create` writes to when none is given.
+pub const DEFAULT_FILE: &str = "local";
+
+pub fn check_name(name: &str) -> Result {
     if !is_valid_name(name) {
         fail!(
             "Invalid alias name '{name}': use letters, digits and _.-:+@%,^~, not starting with '-'"
         );
     }
+    Ok(())
+}
+
+pub fn check_command(command: &str) -> Result {
     if command.trim().is_empty() {
         fail!("The command cannot be empty");
     }
     if command.contains(['\n', '\r']) {
         fail!("The command must fit on one line");
     }
-    let file_name = normalize_file_arg(file.unwrap_or("local"))?;
+    Ok(())
+}
+
+/// Fails when `file_name` (already normalized) in `dir` defines `name`.
+pub fn check_not_in_file(dir: &Path, file_name: &str, name: &str) -> Result {
+    let target = dir.join(file_name);
+    if target.exists() && AliasFile::load(&target)?.defines(name) {
+        fail!("Alias '{name}' already exists in {file_name}");
+    }
+    Ok(())
+}
+
+pub fn create(name: &str, command: &str, file: Option<&str>) -> Result {
+    check_name(name)?;
+    check_command(command)?;
+    let file_name = normalize_file_arg(file.unwrap_or(DEFAULT_FILE))?;
     let dir = paths::aliases_dir();
     fs::create_dir_all(&dir)?;
     let target = dir.join(&file_name);
 
-    if target.exists() && AliasFile::load(&target)?.defines(name) {
-        fail!("Alias '{name}' already exists in {file_name}");
-    }
+    check_not_in_file(&dir, &file_name, name)?;
     append_definition(&target, name, command)?;
     ui::success(&format!("Alias '{name}' added to {}", target.display()));
 
