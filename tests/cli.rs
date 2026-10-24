@@ -450,3 +450,31 @@ fn honours_aliases_dir_overrides() {
     assert!(custom.join("z.alias").exists());
     assert!(!env.file("z.alias").exists());
 }
+
+#[test]
+fn create_without_a_terminal_needs_the_arguments() {
+    let env = Env::new();
+    let err = env.fails(&["create"]);
+    assert!(err.contains("run in a terminal to be asked"), "{err}");
+    assert!(
+        env.fails(&["create", "gs"])
+            .contains("Missing the alias name or the command")
+    );
+    assert!(!env.file("local.alias").exists());
+}
+
+#[test]
+fn create_takes_the_file_as_an_option_too() {
+    let env = Env::new();
+    env.ok(&["create", "gs", "git status", "-f", "git"]);
+    assert!(env.read("git.alias").contains("alias gs='git status'"));
+    let output = env
+        .cmd(&["create", "a", "b", "x", "--file", "y"])
+        .output()
+        .unwrap();
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "positional file and --file conflict"
+    );
+}

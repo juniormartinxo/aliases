@@ -39,7 +39,7 @@ macro_rules! fail {
     };
 }
 
-fn no_color() -> bool {
+pub fn no_color() -> bool {
     std::env::var_os("NO_COLOR").is_some_and(|v| !v.is_empty())
 }
 

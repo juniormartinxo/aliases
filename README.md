@@ -62,7 +62,7 @@ To share one set of aliases, point `ALIASES_DIR` at the other side's folder (e.g
 
 | Command | Description |
 |---------|-------------|
-| `alias-create <name> <cmd> [file]` | Create a new alias. Defaults to `local.alias`. |
+| `alias-create [name] [cmd] [file]` | Create a new alias. Without arguments, asks for each field. Defaults to `local.alias`. |
 | `alias-remove <name> [file]` | Remove an alias. |
 | `alias-list` | List all managed aliases. |
 | `alias-find <query>` | Search for aliases by name or command. |
@@ -84,11 +84,29 @@ aliases doctor
 aliases --help
 ```
 
+### Creating interactively
+
+Run `alias-create` with no arguments and it asks for the name, the command and the file, checking each one as you type. The file field suggests the existing files (Tab completes; a new name creates the file), and nothing is written until you confirm. Esc cancels. Give some of the values to be asked only for the rest: `alias-create gs`, or `alias-create -f git` to pick the file up front.
+
+```text
+Create an alias  Enter confirms · Esc cancels
+◇ Alias name glog
+◇ Command git log --oneline
+◇ File git
+◇ Save to git.alias? Yes
+✅ Alias 'glog' added to ~/.config/aliases/aliases.d/git.alias
+```
+
+With all the arguments, or outside a terminal (scripts), it never asks.
+
 ### Examples
 
 ```bash
 # Create a new alias in the 'git' category
 alias-create gs 'git status' git
+
+# Or let it ask for each field (Tab completes the file name)
+alias-create
 
 # List all aliases
 alias-list

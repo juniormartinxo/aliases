@@ -15,6 +15,7 @@
 
 ### Added
 
+- `alias-create` without arguments asks for the name, the command and the file, validating each field as it is typed, suggesting the existing files (Tab completes) and confirming before writing. Given values are not asked for; `-f/--file` picks the file up front. Outside a terminal, missing arguments are an error.
 - `alias-doctor` reports unsupported lines, aliases defined in several files, names PowerShell cannot load, the old integration block, and WSL sessions that only see the Windows `aliases.exe`.
 - `alias-create` warns when another file already defines the alias and says which one wins.
 - `ALIASES_DIR` / `ALIASES_ROOT` to choose the config location (e.g. one folder for Windows and WSL).

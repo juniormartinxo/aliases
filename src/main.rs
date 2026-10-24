@@ -7,6 +7,7 @@ mod init;
 mod install;
 mod list;
 mod paths;
+mod prompt;
 mod ui;
 
 use std::io;
@@ -48,21 +49,28 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Create an alias
+    /// Create an alias; without arguments, asks for each field
     #[command(
         visible_alias = "add",
-        after_help = "Examples:\n  \
+        after_help = "In a terminal, the fields not given are asked for, with validation as you type\n\
+            and the existing files suggested (Tab completes).\n\n\
+            Examples:\n  \
+            aliases create\n  \
+            aliases create -f git\n  \
             aliases create gs 'git status' git\n  \
             aliases create pfle \"& 'C:\\Program Files\\Notepad++\\notepad++.exe' '$PROFILE'\" system\n  \
             aliases create syncdocs \"& 'C:\\tools\\sync-docs.ps1'\" scripts"
     )]
     Create {
         /// Alias name
-        name: String,
+        name: Option<String>,
         /// Command the alias runs
-        command: String,
+        command: Option<String>,
         /// File to write to, with or without .alias [default: local]
         file: Option<String>,
+        /// File to write to, when asking for the name and the command
+        #[arg(short, long = "file", value_name = "FILE", conflicts_with = "file")]
+        file_option: Option<String>,
     },
     /// Remove an alias
     #[command(
@@ -156,7 +164,26 @@ fn run(command: Cmd) -> ui::Result {
             name,
             command,
             file,
-        } => commands::create(&name, &command, file.as_deref()),
+            file_option,
+        } => {
+            let file = file.or(file_option);
+            match (name, command) {
+                (Some(name), Some(command)) => commands::create(&name, &command, file.as_deref()),
+                (name, command) if prompt::is_interactive() => {
+                    match prompt::ask_create(name, command, file)? {
+                        Some(new) => commands::create(&new.name, &new.command, Some(&new.file)),
+                        None => {
+                            eprintln!("Cancelled.");
+                            std::process::exit(130);
+                        }
+                    }
+                }
+                _ => fail!(
+                    "Missing the alias name or the command. Pass them as arguments, \
+                     or run in a terminal to be asked for them."
+                ),
+            }
+        }
         Cmd::Remove { name, file } => commands::remove(&name, file.as_deref()),
         Cmd::List => commands::list(),
         Cmd::Find { query } => commands::find(&query),

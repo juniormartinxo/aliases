@@ -62,7 +62,7 @@ O `alias-doctor` avisa quando o WSL só enxerga o `aliases.exe` do Windows no `P
 
 | Comando | Descrição |
 |---------|-------------|
-| `alias-create <nome> <cmd> [arquivo]` | Cria um novo alias. Padrão: `local.alias`. |
+| `alias-create [nome] [cmd] [arquivo]` | Cria um novo alias. Sem argumentos, pergunta cada campo. Padrão: `local.alias`. |
 | `alias-remove <nome> [arquivo]` | Remove um alias. |
 | `alias-list` | Lista todos os aliases gerenciados. |
 | `alias-find <termo>` | Busca aliases pelo nome ou pelo comando. |
@@ -84,11 +84,29 @@ aliases doctor
 aliases --help
 ```
 
+### Criando de forma interativa
+
+Rode `alias-create` sem argumentos e ele pergunta o nome, o comando e o arquivo, validando cada um enquanto você digita. O campo de arquivo sugere os arquivos existentes (Tab completa; um nome novo cria o arquivo), e nada é gravado antes de você confirmar. Esc cancela. Passe parte dos valores para ele perguntar só o resto: `alias-create gs`, ou `alias-create -f git` para escolher o arquivo de antemão.
+
+```text
+Create an alias  Enter confirms · Esc cancels
+◇ Alias name glog
+◇ Command git log --oneline
+◇ File git
+◇ Save to git.alias? Yes
+✅ Alias 'glog' added to ~/.config/aliases/aliases.d/git.alias
+```
+
+Com todos os argumentos, ou fora de um terminal (scripts), ele nunca pergunta.
+
 ### Exemplos
 
 ```bash
 # Criar um novo alias na categoria 'git'
 alias-create gs 'git status' git
+
+# Ou deixar que ele pergunte cada campo (Tab completa o nome do arquivo)
+alias-create
 
 # Listar todos os aliases
 alias-list
