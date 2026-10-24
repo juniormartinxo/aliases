@@ -21,7 +21,11 @@ impl Env {
     }
 
     fn dir(&self) -> PathBuf {
-        self.home.path().join(".config/aliases/aliases.d")
+        self.home
+            .path()
+            .join(".config")
+            .join("aliases")
+            .join("aliases.d")
     }
 
     fn file(&self, name: &str) -> PathBuf {
@@ -152,7 +156,14 @@ fn create_validates_its_arguments() {
         env.fails(&["create", "a", "x", "../evil"])
             .contains("Invalid file name")
     );
-    assert!(!env.home.path().join(".config/aliases/evil.alias").exists());
+    assert!(
+        !env.home
+            .path()
+            .join(".config")
+            .join("aliases")
+            .join("evil.alias")
+            .exists()
+    );
 }
 
 #[test]
@@ -379,7 +390,7 @@ fn setup_is_idempotent_and_uninstall_removes_the_block() {
     assert_eq!(fs::read_to_string(&rc).unwrap(), "export A=1\n");
     assert!(env.dir().exists(), "config is kept unless asked");
     env.ok(&["uninstall", "--rc", rc.to_str().unwrap(), "--remove-config"]);
-    assert!(!env.home.path().join(".config/aliases").exists());
+    assert!(!env.home.path().join(".config").join("aliases").exists());
 }
 
 #[test]
