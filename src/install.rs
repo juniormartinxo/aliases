@@ -69,43 +69,54 @@ fn lines_with_endings(text: &str) -> Vec<&str> {
     text.split_inclusive('\n').collect()
 }
 
+/// Indexes of the start and end marker lines. An unterminated block is not a block, so
+/// nothing after it is ever removed.
+fn block_range(lines: &[&str]) -> Option<(usize, usize)> {
+    let start = lines.iter().position(|l| l.trim() == START_MARKER)?;
+    let end = start + lines[start..].iter().position(|l| l.trim() == END_MARKER)?;
+    Some((start, end))
+}
+
 /// The lines between the markers, if the block is complete.
 pub fn find_block(text: &str) -> Option<Vec<&str>> {
     let lines = lines_with_endings(text);
-    let start = lines.iter().position(|l| l.trim() == START_MARKER)?;
-    let end = start + lines[start..].iter().position(|l| l.trim() == END_MARKER)?;
+    let (start, end) = block_range(&lines)?;
     Some(lines[start + 1..end].iter().map(|l| l.trim()).collect())
 }
 
-/// `text` without the block. An unterminated block is left alone rather than removing
-/// everything after it.
+/// `text` without the block.
 pub fn strip_block(text: &str) -> (String, bool) {
     let lines = lines_with_endings(text);
-    let Some(start) = lines.iter().position(|l| l.trim() == START_MARKER) else {
-        return (text.to_string(), false);
-    };
-    let Some(len) = lines[start..].iter().position(|l| l.trim() == END_MARKER) else {
+    let Some((start, end)) = block_range(&lines) else {
         return (text.to_string(), false);
     };
     let mut kept: Vec<&str> = lines[..start].to_vec();
-    kept.extend(&lines[start + len + 1..]);
+    kept.extend(&lines[end + 1..]);
     (kept.concat(), true)
 }
 
+/// `text` with the block holding `content`: replaced where it is, so whatever the user
+/// placed after it stays after it, or appended at the end.
 pub fn with_block(text: &str, content: &str) -> String {
     let eol = if text.contains("\r\n") || (text.is_empty() && cfg!(windows)) {
         "\r\n"
     } else {
         "\n"
     };
-    let (mut out, _) = strip_block(text);
+    let block: String = [START_MARKER, content, END_MARKER]
+        .iter()
+        .map(|line| format!("{line}{eol}"))
+        .collect();
+
+    let lines = lines_with_endings(text);
+    if let Some((start, end)) = block_range(&lines) {
+        return [lines[..start].concat(), block, lines[end + 1..].concat()].concat();
+    }
+    let mut out = text.to_string();
     if !out.is_empty() && !out.ends_with('\n') {
         out.push_str(eol);
     }
-    for line in [START_MARKER, content, END_MARKER] {
-        out.push_str(line);
-        out.push_str(eol);
-    }
+    out.push_str(&block);
     out
 }
 
@@ -245,7 +256,7 @@ mod tests {
         let updated = with_block(text, "eval new");
         assert_eq!(
             updated,
-            "a\nb\n# >>> aliases-manager >>>\neval new\n# <<< aliases-manager <<<\n"
+            "a\n# >>> aliases-manager >>>\neval new\n# <<< aliases-manager <<<\nb\n"
         );
         assert_eq!(with_block(&updated, "eval new"), updated);
     }
