@@ -1,139 +1,25 @@
 #!/bin/bash
-# share/init.sh
-# Check if we are running in an interactive shell
-case "$-" in
-    *i*) ;;
-    *) return ;;
-esac
+# share/init.sh: compatibility shim for startup files still holding the old
+# `source .../share/init.sh` block. Run ./setup.sh to switch to the new integration
+# (`eval "$(aliases init <shell>)"`); this file will be removed in a future version.
 
-# Function to load aliases from a directory
-_aliases_manager_load() {
-    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/aliases"
-    local aliases_d="$config_dir/aliases.d"
+_aliases_manager_shim() {
+    local shell_name=bash
+    [ -n "${ZSH_VERSION-}" ] && shell_name=zsh
 
-    # Export the CLI binary path if not already in PATH
-    # This assumes init.sh is located at <repo>/share/init.sh
-    # and binaries are at <repo>/bin
-    local current_script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
-    local repo_root
-    repo_root="$(cd "$(dirname "$current_script_path")/.." && pwd)"
-    
-    # Add bin to PATH if it's not there
-    case ":$PATH:" in
-        *":$repo_root/bin:"*) ;;
-        *) export PATH="$repo_root/bin:$PATH" ;;
-    esac
+    # shellcheck disable=SC2296 # zsh fallback for the script path
+    local script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
+    local repo_root bin
+    repo_root="$(cd "$(dirname "$script_path")/.." && pwd)"
+    bin="$(command -v aliases 2>/dev/null)"
+    [ -x "$bin" ] || bin="$repo_root/target/release/aliases"
 
-    # Ensure config directory exists
-    if [[ ! -d "$aliases_d" ]]; then
-       # Silently return or maybe warn? 
-       # For a CLI tool, we might expect the setup to have run.
-       return
+    if [ ! -x "$bin" ]; then
+        echo "aliases-manager: the aliases program is not installed. Run $repo_root/setup.sh" >&2
+        return 1
     fi
-
-    # Load aliases in lexical order
-    # Using a glob that works in both bash and zsh
-    if [ -n "$ZSH_VERSION" ]; then
-        setopt local_options nullglob
-        for file in "$aliases_d"/*.alias; do
-            [[ -f "$file" ]] && source "$file"
-        done
-    else
-        shopt -s nullglob
-        for file in "$aliases_d"/*.alias; do
-            [[ -f "$file" ]] && source "$file"
-        done
-        shopt -u nullglob
-    fi
-
-    # Load local.alias last and specifically
-    if [[ -f "$aliases_d/local.alias" ]]; then
-        source "$aliases_d/local.alias"
-    fi
+    eval "$("$bin" init "$shell_name")"
 }
 
-alias-reload() {
-    # Resolve repo root based on this script location (works in bash and zsh)
-    local current_script_path="${BASH_SOURCE[0]:-${(%):-%x}}"
-    local repo_root
-    repo_root="$(cd "$(dirname "$current_script_path")/.." && pwd)"
-
-    if [[ -f "$repo_root/share/init.sh" ]]; then
-        source "$repo_root/share/init.sh"
-    else
-        echo "aliases-manager: init script not found at $repo_root/share/init.sh" >&2
-        return 1
-    fi
-    echo "Aliases reloaded!"
-}
-
-alias-edit() {
-    local name="$1"
-    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/aliases"
-    local aliases_d="$config_dir/aliases.d"
-    local target_file=""
-    local matches=()
-    local file
-    
-    if [[ "$name" == "--help" ]] || [[ "$name" == "-h" ]]; then
-        echo "Usage: alias-edit <name-or-file>"
-        echo "Examples:"
-        echo "  alias-edit git"
-        echo "  alias-edit gst"
-        return 0
-    fi
-
-    if [[ -z "$name" ]]; then
-        echo "Usage: alias-edit <name-or-file>"
-        return 1
-    fi
-
-    if [[ ! -d "$aliases_d" ]]; then
-        echo "Aliases directory not found."
-        return 1
-    fi
-    
-    if [[ -f "$aliases_d/$name.alias" ]]; then
-        target_file="$aliases_d/$name.alias"
-    elif [[ -f "$aliases_d/$name" ]]; then
-        target_file="$aliases_d/$name"
-    else
-        if [ -n "$ZSH_VERSION" ]; then
-            setopt local_options nullglob
-            for file in "$aliases_d"/*.alias; do
-                if grep -qE "^[[:space:]]*alias[[:space:]]+$name[[:space:]]*=" "$file"; then
-                    matches+=("$file")
-                fi
-            done
-        else
-            shopt -s nullglob
-            for file in "$aliases_d"/*.alias; do
-                if grep -qE "^[[:space:]]*alias[[:space:]]+$name[[:space:]]*=" "$file"; then
-                    matches+=("$file")
-                fi
-            done
-            shopt -u nullglob
-        fi
-
-        if [[ ${#matches[@]} -eq 1 ]]; then
-            target_file="${matches[0]}"
-        elif [[ ${#matches[@]} -gt 1 ]]; then
-            echo "Alias '$name' exists in multiple files. Specify the file name."
-            printf '%s\n' "${matches[@]##*/}"
-            return 1
-        fi
-    fi
-    
-    if [[ -n "$target_file" ]]; then
-        ${EDITOR:-vi} "$target_file"
-        alias-reload
-    else
-        echo "Alias file or alias '$name' not found."
-        echo "Available files:"
-        ls "$aliases_d"
-        return 1
-    fi
-}
-
-_aliases_manager_load
-unset -f _aliases_manager_load
+_aliases_manager_shim
+unset -f _aliases_manager_shim

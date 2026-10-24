@@ -1,80 +1,93 @@
 #!/usr/bin/env bats
+# Shell integration: what `eval "$(aliases init bash)"` gives an interactive shell.
+# Needs a built program: cargo build (or set ALIASES_BIN).
 
 setup() {
-    # Create a temporary directory for config
-    export TEST_DIR="$(mktemp -d)"
-    export XDG_CONFIG_HOME="$TEST_DIR/.config"
-    export HOME="$TEST_DIR"
-    
-    # Path to repo bins
     REPO_ROOT="$(cd "$(dirname "$BATS_TEST_DIRNAME")" && pwd)"
-    export PATH="$REPO_ROOT/bin:$PATH"
-    
-    # Initialize structure
-    mkdir -p "$XDG_CONFIG_HOME/aliases/aliases.d"
-    export ALIASES_DIR="$XDG_CONFIG_HOME/aliases/aliases.d"
-    
-    # Source utils to have env vars if needed
-    source "$REPO_ROOT/lib/utils.sh"
+    BIN="${ALIASES_BIN:-$REPO_ROOT/target/debug/aliases}"
+    [ -x "$BIN" ] || skip "build the program first (cargo build)"
+
+    TEST_DIR="$(mktemp -d)"
+    export HOME="$TEST_DIR"
+    export XDG_CONFIG_HOME="$TEST_DIR/.config"
+    unset ALIASES_ROOT ALIASES_DIR
+    ALIASES_DIR="$XDG_CONFIG_HOME/aliases/aliases.d"
+    mkdir -p "$ALIASES_DIR"
 }
 
 teardown() {
     rm -rf "$TEST_DIR"
 }
 
-@test "alias-create: creates a new alias file" {
-    run alias-create foo 'echo bar' testfile
+# Runs commands in a shell that loaded the integration.
+in_shell() {
+    run bash -c "eval \"\$('$BIN' init bash)\"; $1"
+}
+
+@test "init: loads the aliases of every file, local.alias last" {
+    echo "alias gs='git status'" > "$ALIASES_DIR/git.alias"
+    echo "alias gs='git status -sb'" > "$ALIASES_DIR/local.alias"
+    in_shell 'alias gs'
     [ "$status" -eq 0 ]
-    [ -f "$ALIASES_DIR/testfile.alias" ]
+    [ "$output" = "alias gs='git status -sb'" ]
+}
+
+@test "alias-create: defines the alias in the current shell" {
+    in_shell "alias-create foo 'echo bar' testfile >/dev/null && alias foo"
+    [ "$status" -eq 0 ]
+    [ "$output" = "alias foo='echo bar'" ]
     grep -q "alias foo='echo bar'" "$ALIASES_DIR/testfile.alias"
 }
 
-@test "alias-create: fails if alias exists" {
-    alias-create foo 'echo bar' testfile
-    run alias-create foo 'echo baz' testfile
+@test "alias-create: fails if the alias exists" {
+    echo "alias foo='echo bar'" > "$ALIASES_DIR/testfile.alias"
+    in_shell "alias-create foo 'echo baz' testfile"
     [ "$status" -eq 1 ]
 }
 
-@test "alias-list: lists created alias" {
-    alias-create foo 'echo bar' testfile
-    run alias-list
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"foo"* ]]
-    [[ "$output" == *"echo bar"* ]]
+@test "alias-remove: removes the alias from the current shell" {
+    echo "alias foo='echo bar'" > "$ALIASES_DIR/testfile.alias"
+    in_shell 'alias-remove foo >/dev/null; alias foo'
+    [ "$status" -eq 1 ]
 }
 
-@test "alias-list: groups aliases under their source file" {
-    alias-create gs 'git status' git
-    alias-create dcu 'docker compose up' docker
-    run alias-list
+@test "alias-disable / alias-enable: unload and reload a file" {
+    echo "alias foo='echo bar'" > "$ALIASES_DIR/testfile.alias"
+    in_shell 'alias-disable testfile >/dev/null; alias foo'
+    [ "$status" -eq 1 ]
+    in_shell 'alias-enable testfile >/dev/null; alias foo'
     [ "$status" -eq 0 ]
-    [[ "$output" == *"docker.alias"* ]]
-    [[ "$output" == *"git.alias"* ]]
-    # docker.alias block comes first and holds dcu, not gs
-    docker_block="${output%%git.alias*}"
-    [[ "$docker_block" == *"dcu"* ]]
-    [[ "$docker_block" != *"gs "* ]]
-    [[ "$output" == *"2 aliases in 2 files"* ]]
 }
 
-@test "alias-list: no color codes when output is not a terminal" {
-    alias-create foo 'echo bar' testfile
-    run alias-list
+@test "alias-reload: picks up changes made outside the shell" {
+    in_shell "echo \"alias late='echo late'\" > '$ALIASES_DIR/late.alias'; alias-reload; alias late"
     [ "$status" -eq 0 ]
-    [[ "$output" != *$'\033'* ]]
+    [[ "$output" == *"Aliases reloaded!"* ]]
+    [[ "$output" == *"alias late='echo late'"* ]]
 }
 
-@test "alias-remove: removes alias" {
-    alias-create foo 'echo bar' testfile
-    run alias-remove foo
-    [ "$status" -eq 0 ]
-    run grep "alias foo=" "$ALIASES_DIR/testfile.alias"
-    [ "$status" -eq 1 ] # grep should fail to find it
-}
-
-@test "alias-find: finds alias" {
-    alias-create findme 'echo found' testfile
-    run alias-find findme
+@test "alias-list and alias-find: work through the wrappers" {
+    echo "alias findme='echo found'" > "$ALIASES_DIR/testfile.alias"
+    in_shell 'alias-list'
+    [[ "$output" == *"testfile.alias"* ]]
+    [[ "$output" == *"1 alias in 1 file"* ]]
+    in_shell 'alias-find findme'
     [ "$status" -eq 0 ]
     [[ "$output" == *"findme"* ]]
+}
+
+@test "aliases expand when used" {
+    echo "alias greet='echo hello from alias'" > "$ALIASES_DIR/x.alias"
+    run bash -ic "eval \"\$('$BIN' init bash)\"
+greet"
+    [[ "$output" == *"hello from alias"* ]]
+}
+
+@test "share/init.sh: the old integration still loads the aliases" {
+    echo "alias foo='echo bar'" > "$ALIASES_DIR/testfile.alias"
+    mkdir -p "$TEST_DIR/bin"
+    ln -s "$BIN" "$TEST_DIR/bin/aliases"
+    run bash -c "PATH='$TEST_DIR/bin':\$PATH; source '$REPO_ROOT/share/init.sh'; alias foo"
+    [ "$status" -eq 0 ]
+    [ "$output" = "alias foo='echo bar'" ]
 }

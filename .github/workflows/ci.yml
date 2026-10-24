@@ -7,23 +7,61 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - name: Check formatting
+      if: runner.os == 'Linux'
+      run: cargo fmt --check
+
+    - name: Clippy
+      run: cargo clippy --all-targets --locked -- -D warnings
+
+    - name: Tests
+      run: cargo test --locked
+
+    - name: PowerShell integration
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        cargo build --locked
+        ./tests/smoke.ps1 -Binary target/debug/aliases.exe
+
+    - name: Windows PowerShell 5.1 integration
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: ./tests/smoke.ps1 -Binary target/debug/aliases.exe
+
+  shell:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+
+    - uses: dtolnay/rust-toolchain@stable
 
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y shellcheck
-        git clone https://github.com/bats-core/bats-core.git
-        cd bats-core
-        sudo ./install.sh /usr/local
+        git clone --depth 1 https://github.com/bats-core/bats-core.git
+        sudo ./bats-core/install.sh /usr/local
 
-    - name: Run ShellCheck
+    - name: ShellCheck
+      run: shellcheck setup.sh uninstall.sh share/init.sh
+
+    - name: Shell integration tests
       run: |
-        shellcheck bin/* lib/*.sh share/*.sh setup.sh uninstall.sh
-
-    - name: Run Sets
-      run: bats tests/
+        cargo build --locked
+        bats tests/
